@@ -1,0 +1,7 @@
+smart_core:
+  url: git@github.com:cerego/smart_core.git
+  submoduled_in: [:smart_mobile, :smart_api]
+smart_api:
+  url: git@github.com:cerego/smart_api.git
+smart_mobile:
+  url: git@github.com:cerego/smart_mobile.git
