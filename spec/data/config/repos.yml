@@ -1,0 +1,5 @@
+test_git_submodule:
+  url: git://github.com/birkirb/test_git_submodule.git
+  submoduled_in: [:test_git_using_submodule_1]
+test_git_using_submodule_1:
+  url: git://github.com/birkirb/test_git_using_submodule_1.git
