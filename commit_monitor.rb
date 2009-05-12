@@ -1,7 +1,6 @@
 require 'rubygems'
 require 'sinatra'
 require 'json'
-require 'logger'
 require 'fileutils'
 
 DATA=<<-EOF
@@ -43,45 +42,15 @@ DATA=<<-EOF
 }
 EOF
 
-log_dir = File.join(File.dirname(__FILE__), "log")
-if !File.exist?(log_dir)
-  FileUtils.mkdir_p(log_dir)
-end
-$logger = Logger.new(File.join(log_dir, "web_hook.log"))
-$base_path = ''
+require 'lib/git_repo_manager'
+require 'lib/global_logger'
 
-def save_head(branch, commit)
-  if File.exist?(@git)
-    branch_dir = File.join(@git, 'kwala', 'branches', branch)
-    FileUtils.mkdir_p(branch_dir) if !File.exist?(branch_dir)
-    File.open(File.join(branch_dir, 'HEAD'), 'w+') do |file|
-      file.write(commit)
-    end
+manager = GITRepoManager.new
+
+manager.repos_acting_as_submodules.each do |repo|
+  post repo do
+    payload = JSON.parse(params[:payload])
+    $logger.info "Received payload from #{payload.repository.url}"
+    manager.update_submodule(payload.repository.name, payload.ref)
   end
-end
-
-def save_tested(branch, commit)
-  if File.exist?(@git)
-    branch_dir = File.join(@git, 'kwala', 'branches', branch)
-    FileUtils.mkdir_p(branch_dir) if !File.exist?(branch_dir)
-    File.open(File.join(branch_dir, 'TESTED'), 'w+') do |file|
-      file.write(commit)
-    end
-  end
-end
-
-post '/' do
-#  push = JSON.parse(params[:payload])
-  push = JSON.parse(DATA)
-
-  $logger.info "REQUEST START"
-  $logger.info "Before : #{push["before"]}"
-  $logger.info "After : #{push["after"]}"
-  $logger.info "Commits\n" + push["commits"].map { |h| "#{h["author"]["name"]} : #{h["url"]}" }.join("\n")
-  $logger.info "Rep : " + push["repository"]["url"] + " : " + push["repository"]["name"]
-  $logger.info "Branch : #{push["ref"]}"
-  $logger.info push.inspect
-  $logger.info "REQUEST END"
-
-  "Thanks"
 end

@@ -1,2 +1,4 @@
 /data
-config/repos.yml
+/log
+/config/repos.yml
+/spec/data/test_repos
