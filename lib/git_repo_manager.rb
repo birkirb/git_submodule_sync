@@ -1,56 +1,73 @@
+require 'rubygems'
 require 'yaml'
 require 'lib/global_logger'
 require 'git'
 
 class GITRepoManager
-  attr_reader :repo_config, :clone_path, :repos
+  attr_reader :config_file, :clone_path, :submodules, :config_hash
 
   def initialize(config = 'config/repos.yml', clone_path = 'data/repos')
-    @repo_config = config
+    @config_file = config
     raise 'Missing config file!' unless File.exists?(config)
-    @repos = symbolize_keys(YAML.load_file(config))
-    split_repos
+    @config_hash = symbolize_keys(YAML.load_file(config))
+    process_config_hash
     FileUtils.mkdir_p(clone_path)
     @clone_path = clone_path
     @cloned_repos = []
+    @repos = {}
   end
 
   def clone_repos_using_submodules
-    @repos_using_submodules.each do |k, v|
-      url = @repos[k][:url]
-      $logger.info("Cloning repository at #{url}")
-      clone_repo(k, url) unless repo_cloned?(k)
+    @repos_using_submodules.each do |r|
+      uri = @config_hash[r][:uri]
+      $logger.info("Cloning repository at #{uri}")
+      clone_repo(r, uri)
     end
   end
 
-  def update_submodule(submodule, branch)
-    @repos[submodule.to_sym][:submoduled_in].each do |repo|
-      if repo_cloned?(repo)
-        submodule_path = repo_submodule_path(repo)
-        puts submodule_path
-      else
-        raise "Unknown repository: #{repo}"
+  # Submodule's branch has been update to commit.
+  # All repositories containing submodule should be update to that commit
+  def update_submodule(submodule, branch, commit)
+    @repos_using_submodules.each do |name|
+      repo = @repos[name]
+
+      if repo.submodules.includes?(submodule)
+        # repo has this submodule
+        submodule = Git.submodule(submodule)
+        submodule.init
+        submodule.update
+
+        if repo.branches.includes?(branch)
+          # repo has a branch with the same name as the submodule
+          sub_repo = submodule.repository
+          sub_repo.remote.fetch
+          sub_repo.checkout(commit)
+
+          repo.add(submodule.path)
+          repo.commit("Auto-updating submodule #{submodule} in branch #{branch} to commit #{commit}.")
+          repo.push('origin', branch)
+        end
       end
     end
   end
 
   private
 
-  def split_repos
-    @repos_acting_as_submodules = []
+  def process_config_hash
+    @submodules = []
     @repos_using_submodules = []
     listed_submodules = []
 
-    @repos.each do |k, v|
+    @config_hash.each do |k, v|
       if submoduled_in = v[:submoduled_in]
         listed_submodules.concat(submoduled_in)
-        @repos_acting_as_submodules.push(k)
+        @submodules.push(k)
       else
         @repos_using_submodules.push(k)
       end
     end
 
-    @repos_acting_as_submodules.uniq!
+    @submodules.uniq!
     @repos_using_submodules.uniq!
   end
 
@@ -59,19 +76,24 @@ class GITRepoManager
   end
 
   def repo_submodule_path(name)
-    path = repo_path(name)
-    Git.open(path, :log => $logger)
-    $logger.debug("Switching to repo in: #{path}")
-    treeish, submodule_path, description = submodule_status.split(' ')
-    $logger.debug("Found submodule #{submodule_path} on commit #{treeish}")
+    repo = @repos[name]
+    i
     File.join(path, submodule_path)
   end
 
-  def clone_repo(name, url)
-    if name.nil? || url.nil?
-      raise 'Missing Repository Name or URL'
+  def repo_has_submodule?(name, submodule)
+  end
+
+  def clone_repo(name, uri)
+    if name.nil? || uri.nil?
+      raise 'Missing Repository Name or URI'
     else
-      `git clone #{url} #{repo_path(name)}`
+      if repo_cloned?(name)
+        repo = Git.open(repo_path(name))
+      else
+        repo = Git.clone(uri, name.to_s, :path => @clone_path)
+      end
+      @repos[name] = repo
     end
   end
 
