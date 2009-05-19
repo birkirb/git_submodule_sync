@@ -27,25 +27,38 @@ class GITRepoManager
 
   # Submodule's branch has been update to commit.
   # All repositories containing submodule should be update to that commit
-  def update_submodule(submodule, branch, commit)
-    @repos_using_submodules.each do |name|
-      repo = @repos[name]
+  def update_submodule(submodule_name, branch, commit)
+    $logger.info("Received commit #{commit[0..8]} for submodule #{submodule_name}, branch #{branch}")
 
-      if repo.submodules.includes?(submodule)
-        # repo has this submodule
-        submodule = Git.submodule(submodule)
-        submodule.init
-        submodule.update
+    @repos_using_submodules.each do |repo_name|
+      $logger.debug("Checking #{repo_name} for submodules")
 
-        if repo.branches.includes?(branch)
-          # repo has a branch with the same name as the submodule
-          sub_repo = submodule.repository
-          sub_repo.remote.fetch
-          sub_repo.checkout(commit)
+      repo = @repos[repo_name]
 
-          repo.add(submodule.path)
-          repo.commit("Auto-updating submodule #{submodule} in branch #{branch} to commit #{commit}.")
-          repo.push('origin', branch)
+      repo.submodules.each do |submodule|
+        $logger.debug("Repo #{repo_name} has submodule #{submodule.path}")
+
+        if submodule.path.index(submodule_name)
+          $logger.debug("Found submodule #{submodule_name} as #{submodule.path} in #{repo_name}")
+          # repo has a submodule corresponding to submodule_name
+
+          submodule.init unless submodule.initialized?
+          submodule.update unless submodule.updated?
+
+          if repo.is_branch?(branch)
+            $logger.debug("Repo has identical branch as submodule #{branch}")
+
+            # repo has a branch with the same name as the submodule
+            sub_repo = submodule.repository
+            sub_repo.remote.fetch
+            sub_repo.checkout(commit)
+
+            repo.add(submodule.path)
+            repo.commit("Auto-updating submodule #{submodule} in branch #{branch} to commit #{commit}.")
+            repo.push('origin', branch)
+          else
+            raise "Repository #{repo_name} does not have a branch called #{branch}"
+          end
         end
       end
     end
@@ -75,23 +88,14 @@ class GITRepoManager
     File.exists?(File.join(repo_path(name), '.git'))
   end
 
-  def repo_submodule_path(name)
-    repo = @repos[name]
-    i
-    File.join(path, submodule_path)
-  end
-
-  def repo_has_submodule?(name, submodule)
-  end
-
   def clone_repo(name, uri)
     if name.nil? || uri.nil?
       raise 'Missing Repository Name or URI'
     else
       if repo_cloned?(name)
-        repo = Git.open(repo_path(name))
+        repo = Git.open(repo_path(name), :log => $logger)
       else
-        repo = Git.clone(uri, name.to_s, :path => @clone_path)
+        repo = Git.clone(uri, name.to_s, :path => @clone_path, :log => $logger)
       end
       @repos[name] = repo
     end

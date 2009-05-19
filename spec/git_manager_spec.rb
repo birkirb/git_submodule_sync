@@ -22,9 +22,9 @@ describe GITRepoManager do
 
   it 'should give access to config data' do
     manager.config_hash.should == {
-      :test_git_using_submodule_1 => {:uri => "git://github.com/birkirb/test_git_using_submodule_1.git"},
+      :test_git_using_submodule_1 => {:uri => "git@github.com:birkirb/test_git_using_submodule_1.git"},
       :test_git_submodule         => {:submoduled_in => [:test_git_using_submodule_1],
-                                      :uri => "git://github.com/birkirb/test_git_submodule.git"}
+                                      :uri => "git@github.com:birkirb/test_git_submodule.git"}
     }
   end
 
@@ -35,6 +35,6 @@ describe GITRepoManager do
   end
 
   it 'should update submodules references for all projects with a branch named the same as the submodule' do
-    manager.update_submodule('test_git_submodule', 'master', "X")
+    manager.update_submodule('test_git_submodule', 'master', "c5d7e75493b7e5297069bb732ca8260434a652e6")
   end
 end

@@ -1,5 +1,5 @@
 test_git_submodule:
-  uri: git://github.com/birkirb/test_git_submodule.git
+  uri: git@github.com:birkirb/test_git_submodule.git
   submoduled_in: [:test_git_using_submodule_1]
 test_git_using_submodule_1:
-  uri: git://github.com/birkirb/test_git_using_submodule_1.git
+  uri: git@github.com:birkirb/test_git_using_submodule_1.git
