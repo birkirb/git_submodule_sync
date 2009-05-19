@@ -5,6 +5,9 @@ require 'git'
 
 describe GITRepoManager do
 
+  LOCAL_REPOS = File.join(`pwd`.chomp, 'spec/files/test_repos')
+  TEST_CONFIG = 'spec/files/config/repos.yml'
+
   before(:all) do
     set_file_paths
     sub_path = create_temp_repo(@git_sub_bare)
@@ -23,23 +26,25 @@ describe GITRepoManager do
   end
 
   after(:all) do
-#   remove_temp_directory
+    remove_temp_directory
   end
 
-# context 'when created' do
-#   it 'should raise an error if config file was not found' do
-#     lambda { GITRepoManager.new('config/non_existing_repos.yml') }.should raise_error()
-#   end
-# end
+  context 'when created' do
+    it 'should raise an error if config file was not found' do
+      lambda { GITRepoManager.new('config/non_existing_repos.yml') }.should raise_error()
+    end
+  end
 
   context 'when created with a specfic config file' do
 
-    config = 'spec/files/config/repos.yml'
-    local_repos = File.join('/home/birkirb/workspace/git/git_submodule_sync/spec/files/test_repos')
-    manager = GITRepoManager.new(config, local_repos)
+    after(:all) do
+      FileUtils.rm_r(LOCAL_REPOS)
+    end
+
+    manager = GITRepoManager.new(TEST_CONFIG, LOCAL_REPOS)
 
     it 'should load the configuration file and create a repositories directory' do
-      manager.config_file.should == config
+      manager.config_file.should == TEST_CONFIG
       File.exists?(manager.clone_path).should be_true
     end
 
@@ -65,4 +70,5 @@ describe GITRepoManager do
       #manager.update_submodule('test_git_submodule', 'master', "c5d7e75493b7e5297069bb732ca8260434a652e6")
     end
   end
+
 end

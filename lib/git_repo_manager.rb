@@ -94,6 +94,7 @@ class GITRepoManager
     else
       if repo_cloned?(name)
         repo = Git.open(repo_path(name), :log => $logger)
+        repo.pull
       else
         repo = Git.clone(uri, name.to_s, :path => @clone_path, :log => $logger)
       end
