@@ -8,6 +8,9 @@ describe GITRepoManager do
   LOCAL_REPOS = File.join(`pwd`.chomp, 'spec/files/test_repos')
   TEST_CONFIG = 'spec/files/config/repos.yml'
 
+  TEST_REPO_USING_SUBMODULE = "file:///tmp/spec_testing/using_submodule"
+  TEST_REPO_SUBMODULE = "file:///tmp/spec_testing/submodule"
+
   before(:all) do
     set_file_paths
     @sub_path = create_temp_repo(@git_sub_bare)
@@ -50,9 +53,9 @@ describe GITRepoManager do
 
     it 'should give access to config data' do
       manager.config_hash.should == {
-        :using_submodule => {:uri => "file:///tmp/spec_testing/using_submodule"},
+        :using_submodule => {:uri => TEST_REPO_USING_SUBMODULE},
         :submodule       => {:submoduled_in => [:using_submodule],
-                             :uri => "file:///tmp/spec_testing/submodule"}
+                             :uri => TEST_REPO_SUBMODULE}
       }
     end
 
@@ -85,18 +88,26 @@ describe GITRepoManager do
         local_repo_clone.log.first.message.should == 'New line in readme'
       end
 
-      it 'should update submodules references for all projects with a branch named the same as the submodule' do
+      it 'should auto commit an update to repositories using submodules' do
         `echo "Updating submodule with additional line in readme." >> #{@sub_path}/README`
         @git_repo_sub.add('.')
         @git_repo_sub.commit('New line in readme')
         commit = @git_repo_sub.log.first
 
-        manager.update_submodule('file:///tmp/spec_testing/submodule', 'master', commit.sha)
+        manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
         local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
-        new_auto_commit = local_repo_clone.log.first
-        new_auto_commit.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+        local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end
 
+      it 'should push auto commits to the remote repository' do
+        `echo "Updating submodule with additional line in readme." >> #{@sub_path}/README`
+        @git_repo_sub.add('.')
+        @git_repo_sub.commit('New line in readme')
+        commit = @git_repo_sub.log.first
+
+        manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
+        @git_repo_using_sub.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+      end
     end
   end
 
