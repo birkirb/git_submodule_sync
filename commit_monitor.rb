@@ -47,10 +47,20 @@ require 'lib/global_logger'
 
 manager = GITRepoManager.new
 
-manager.repos_acting_as_submodules.each do |repo|
-  post repo do
-    payload = JSON.parse(params[:payload])
-    $logger.info "Received payload from #{payload.repository.url}"
-    manager.update_submodule(payload.repository.name, payload.ref)
+manager.submodules.each do |submodule_name|
+  path = "/#{submodule_name}"
+
+  get path do
+    halt 403, 'payload only accepted via post'
+  end
+
+  post path do
+    if params[:payload]
+      payload = JSON.parse(params[:payload])
+      $logger.info "Received payload from #{payload.repository.url}"
+      manager.update_submodule(payload.repository.url, payload.after)
+    else
+      halt 403, 'payload missing'
+    end
   end
 end
