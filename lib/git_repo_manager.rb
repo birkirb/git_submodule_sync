@@ -17,36 +17,32 @@ class GITRepoManager
     @repos = {}
   end
 
-  def clone_repos_using_submodules
-    @repos_using_submodules.each do |r|
-      uri = @config_hash[r][:uri]
-      $logger.info("Cloning repository at #{uri}")
-      clone_repo(r, uri)
-    end
-  end
-
   # Submodule's branch has been update to commit.
   # All repositories containing submodule should be update to that commit
-  def update_submodule(submodule_name, branch, commit)
-    $logger.info("Received commit #{commit[0..8]} for submodule #{submodule_name}, branch #{branch}")
+  def update_submodule(submodule_uri, branch, commit)
+    clone_or_pull_repositories
+
+    $logger.info("Received commit #{commit[0..8]} from #{submodule_uri}, branch #{branch}")
 
     @repos_using_submodules.each do |repo_name|
-      $logger.debug("Checking #{repo_name} for submodules")
+      $logger.debug("Checking '#{repo_name}' for submodules")
 
       repo = @repos[repo_name]
 
       repo.submodules.each do |submodule|
-        $logger.debug("Repo #{repo_name} has submodule #{submodule.path}")
+        $logger.debug("Repo '#{repo_name}' has submodule '#{submodule.path}', #{submodule.uri}")
 
-        if submodule.path.index(submodule_name)
-          $logger.debug("Found submodule #{submodule_name} as #{submodule.path} in #{repo_name}")
-          # repo has a submodule corresponding to submodule_name
+        if submodule_uri.index(normalize_git_uri(submodule.uri))
+          $logger.debug("Found submodule #{submodule_uri} as #{submodule.path} in #{repo_name}")
+          # repo has a submodule corresponding to submodule_uri
 
           submodule.init unless submodule.initialized?
           submodule.update unless submodule.updated?
 
           if repo.is_branch?(branch)
             $logger.debug("Repo has identical branch as submodule #{branch}")
+            repo.checkout(branch)
+            repo.merge('origin', branch)
 
             # repo has a branch with the same name as the submodule
             sub_repo = submodule.repository
@@ -54,7 +50,7 @@ class GITRepoManager
             sub_repo.checkout(commit)
 
             repo.add(submodule.path)
-            repo.commit("Auto-updating submodule #{submodule} in branch #{branch} to commit #{commit}.")
+            repo.commit("Auto-updating submodule #{submodule} to commit #{commit}.")
             repo.push('origin', branch)
           else
             raise "Repository #{repo_name} does not have a branch called #{branch}"
@@ -65,6 +61,27 @@ class GITRepoManager
   end
 
   private
+
+  def clone_or_pull_repositories
+    @repos_using_submodules.each do |name|
+      uri = @config_hash[name][:uri]
+
+      if name.nil? || uri.nil?
+        raise 'Missing Repository Name or URI'
+      else
+        if repo_cloned?(name)
+          repo = Git.open(repo_path(name), :log => $logger)
+          $logger.debug("Pulling from repository at #{uri}")
+          repo.fetch
+        else
+          $logger.info("Cloning repository at #{uri}")
+          repo = Git.clone(uri, name.to_s, :path => @clone_path, :log => $logger)
+        end
+        @repos[name] = repo
+      end
+    end
+  end
+
 
   def process_config_hash
     @submodules = []
@@ -88,20 +105,6 @@ class GITRepoManager
     File.exists?(File.join(repo_path(name), '.git'))
   end
 
-  def clone_repo(name, uri)
-    if name.nil? || uri.nil?
-      raise 'Missing Repository Name or URI'
-    else
-      if repo_cloned?(name)
-        repo = Git.open(repo_path(name), :log => $logger)
-        repo.pull
-      else
-        repo = Git.clone(uri, name.to_s, :path => @clone_path, :log => $logger)
-      end
-      @repos[name] = repo
-    end
-  end
-
   def repo_path(name)
     File.join(@clone_path, name.to_s)
   end
@@ -116,6 +119,21 @@ class GITRepoManager
       end
     end
     new_hash
+  end
+
+  def normalize_git_uri(uri)
+    normalized_uri  = uri.dup
+
+    if uri.match(/^\//)
+      # Is local append file protocol
+      normalized_uri = 'file://' + normalized_uri
+    end
+
+    if uri_without_git = normalized_uri.match(/(.*)\/\.git\/?$/)
+      normalized_uri = uri_without_git[1]
+    end
+
+    normalized_uri
   end
 
 end

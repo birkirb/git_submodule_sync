@@ -10,17 +10,17 @@ describe GITRepoManager do
 
   before(:all) do
     set_file_paths
-    sub_path = create_temp_repo(@git_sub_bare)
-    usesub_path = create_temp_repo(@git_usesub_bare)
+    @sub_path = create_temp_repo(@git_sub_bare)
+    @usesub_path = create_temp_repo(@git_usesub_bare)
 
     # Instantiante Git repo objects for testing
-    @git_repo_using_sub = Git.open(usesub_path, :log => $logger)
+    @git_repo_using_sub = Git.open(@usesub_path, :log => $logger)
     @git_repo_using_sub.reset_hard
-    @git_repo_sub = Git.open(sub_path, :log => $logger)
+    @git_repo_sub = Git.open(@sub_path, :log => $logger)
     @git_repo_sub.reset_hard
 
     # Add the submodule
-    @git_repo_using_sub.add_submodule(sub_path, :path => 'plugins/some_module')
+    @git_repo_using_sub.add_submodule(@sub_path, :path => 'plugins/some_module')
     @git_repo_using_sub.add('.')
     @git_repo_using_sub.commit('Adding submodule')
   end
@@ -36,10 +36,6 @@ describe GITRepoManager do
   end
 
   context 'when created with a specfic config file' do
-
-    after(:all) do
-      FileUtils.rm_r(LOCAL_REPOS)
-    end
 
     manager = GITRepoManager.new(TEST_CONFIG, LOCAL_REPOS)
 
@@ -60,14 +56,47 @@ describe GITRepoManager do
       }
     end
 
-    it 'should be able to clone projects that are using submodules' do
-      manager.clone_repos_using_submodules
-      File.exists?(File.join(manager.clone_path, 'using_submodule', '.git')).should be_true
-      File.exists?(File.join(manager.clone_path, 'submodules')).should be_false
-    end
+    context 'and has been instantiated' do
 
-    it 'should update submodules references for all projects with a branch named the same as the submodule' do
-      #manager.update_submodule('test_git_submodule', 'master', "c5d7e75493b7e5297069bb732ca8260434a652e6")
+      after(:all) do
+        FileUtils.rm_r(LOCAL_REPOS) if File.exists?(LOCAL_REPOS)
+      end
+
+      it 'should clone projects that are using submodules' do
+        # Call update with irreleveant data, and make sure stuff is cloned
+        manager.update_submodule('some_model', 'master', 'x')
+
+        File.exists?(File.join(manager.clone_path, 'using_submodule', '.git')).should be_true
+        File.exists?(File.join(manager.clone_path, 'submodules')).should be_false
+        local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+        local_repo_clone.log.size.should == 2 # First and the submodule commit.
+      end
+
+      it 'should pull from projects already cloned so that it has the lastest commits locally' do
+        `echo "New line in the readme file" >> #{@usesub_path}/README`
+        @git_repo_using_sub.add('README')
+        @git_repo_using_sub.commit('New line in readme')
+
+        File.exists?(File.join(manager.clone_path, 'using_submodule', '.git')).should be_true
+        manager.update_submodule('some_model', 'master', 'x')
+        local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+        local_repo_clone.branch('origin/master').checkout
+        local_repo_clone.log.size == 3 # First and the submodule commit.
+        local_repo_clone.log.first.message.should == 'New line in readme'
+      end
+
+      it 'should update submodules references for all projects with a branch named the same as the submodule' do
+        `echo "Updating submodule with additional line in readme." >> #{@sub_path}/README`
+        @git_repo_sub.add('.')
+        @git_repo_sub.commit('New line in readme')
+        commit = @git_repo_sub.log.first
+
+        manager.update_submodule('file:///tmp/spec_testing/submodule', 'master', commit.sha)
+        local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+        new_auto_commit = local_repo_clone.log.first
+        new_auto_commit.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+      end
+
     end
   end
 
