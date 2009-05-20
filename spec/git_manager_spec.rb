@@ -48,7 +48,7 @@ describe GITRepoManager do
     end
 
     it 'should give a list of active submodules' do
-      manager.submodules == [:test_git_submodule]
+      manager.submodules.should == [:submodule]
     end
 
     it 'should give access to config data' do
@@ -72,6 +72,7 @@ describe GITRepoManager do
         File.exists?(File.join(manager.clone_path, 'using_submodule', '.git')).should be_true
         File.exists?(File.join(manager.clone_path, 'submodules')).should be_false
         local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+
         local_repo_clone.log.size.should == 2 # First and the submodule commit.
       end
 
@@ -84,7 +85,8 @@ describe GITRepoManager do
         manager.update_submodule('some_model', 'master', 'x')
         local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
         local_repo_clone.branch('origin/master').checkout
-        local_repo_clone.log.size == 3 # First and the submodule commit.
+
+        local_repo_clone.log.size.should == 3 # First and the submodule commit.
         local_repo_clone.log.first.message.should == 'New line in readme'
       end
 
@@ -96,6 +98,7 @@ describe GITRepoManager do
 
         manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
         local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+
         local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end
 
@@ -103,9 +106,10 @@ describe GITRepoManager do
         `echo "Updating submodule with additional line in readme." >> #{@sub_path}/README`
         @git_repo_sub.add('.')
         @git_repo_sub.commit('New line in readme')
-        commit = @git_repo_sub.log.first
 
+        commit = @git_repo_sub.log.first
         manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
+
         @git_repo_using_sub.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end
     end
