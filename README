@@ -1,0 +1,8 @@
+GitHub hook designed to keep Git projects with submodules automatically in sync with their submodules.
+Simply put if a submodule S has a branch Sb and the containing project P has a branch Pb with the same name then the submodule commit pointer will updated to HEAD for Pb and commited.
+
+This is Sinatra application and requires:
+
+sinatra
+birkirb-ruby-git
+rspec and cucumber for testing.
