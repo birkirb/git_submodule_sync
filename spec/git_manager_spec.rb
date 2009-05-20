@@ -59,13 +59,14 @@ describe GITRepoManager do
       }
     end
 
-    context 'and has been instantiated' do
+    context 'and is ready to handle updates' do
 
       after(:all) do
         FileUtils.rm_r(LOCAL_REPOS) if File.exists?(LOCAL_REPOS)
       end
 
       it 'should clone projects that are using submodules' do
+
         # Call update with irreleveant data, and make sure stuff is cloned
         manager.update_submodule('some_model', 'master', 'x')
 
@@ -77,6 +78,7 @@ describe GITRepoManager do
       end
 
       it 'should pull from projects already cloned so that it has the lastest commits locally' do
+
         `echo "New line in the readme file" >> #{@usesub_path}/README`
         @git_repo_using_sub.add('README')
         @git_repo_using_sub.commit('New line in readme')
@@ -91,6 +93,7 @@ describe GITRepoManager do
       end
 
       it 'should auto commit an update to repositories using submodules' do
+
         `echo "Updating submodule with additional line in readme." >> #{@sub_path}/README`
         @git_repo_sub.add('.')
         @git_repo_sub.commit('New line in readme')
@@ -103,6 +106,7 @@ describe GITRepoManager do
       end
 
       it 'should push auto commits to the remote repository' do
+
         `echo "Updating submodule with additional line in readme." >> #{@sub_path}/README`
         @git_repo_sub.add('.')
         @git_repo_sub.commit('New line in readme')
