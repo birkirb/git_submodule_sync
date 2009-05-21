@@ -12,20 +12,7 @@ describe GITRepoManager do
   TEST_REPO_SUBMODULE = "file:///tmp/spec_testing/submodule"
 
   before(:all) do
-    set_file_paths
-    @sub_path = create_temp_repo(@git_sub_bare)
-    @usesub_path = create_temp_repo(@git_usesub_bare)
-
-    # Instantiante Git repo objects for testing
-    @git_repo_using_sub = Git.open(@usesub_path, :log => $logger)
-    @git_repo_using_sub.reset_hard
-    @git_repo_sub = Git.open(@sub_path, :log => $logger)
-    @git_repo_sub.reset_hard
-
-    # Add the submodule
-    @git_repo_using_sub.add_submodule(@sub_path, :path => 'plugins/some_module')
-    @git_repo_using_sub.add('.')
-    @git_repo_using_sub.commit('Adding submodule')
+    initalize_repos
   end
 
   after(:all) do
@@ -59,7 +46,7 @@ describe GITRepoManager do
       }
     end
 
-    context 'and is ready to handle updates' do
+    context 'when receiving submodule updates' do
 
       after(:all) do
         FileUtils.rm_r(LOCAL_REPOS) if File.exists?(LOCAL_REPOS)
@@ -93,11 +80,7 @@ describe GITRepoManager do
       end
 
       it 'should auto commit an update to repositories using submodules' do
-
-        `echo "Updating submodule with additional line in readme." >> #{@sub_path}/README`
-        @git_repo_sub.add('.')
-        @git_repo_sub.commit('New line in readme')
-        commit = @git_repo_sub.log.first
+        commit = update_submodule
 
         manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
         local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
@@ -106,12 +89,8 @@ describe GITRepoManager do
       end
 
       it 'should push auto commits to the remote repository' do
+        commit = update_submodule
 
-        `echo "Updating submodule with additional line in readme." >> #{@sub_path}/README`
-        @git_repo_sub.add('.')
-        @git_repo_sub.commit('New line in readme')
-
-        commit = @git_repo_sub.log.first
         manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
 
         @git_repo_using_sub.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."

@@ -8,6 +8,7 @@ class GITRepoManager
 
   def initialize(config = 'config/repos.yml', clone_path = 'data/repos')
     @config_file = config
+    $logger.info("Config: #{@config_file}")
     raise 'Missing config file!' unless File.exists?(config)
     @config_hash = symbolize_keys(YAML.load_file(config))
     process_config_hash
@@ -50,8 +51,10 @@ class GITRepoManager
             sub_repo.checkout(commit)
 
             repo.add(submodule.path)
-            repo.commit("Auto-updating submodule #{submodule} to commit #{commit}.")
+            message = "Auto-updating submodule #{submodule} to commit #{commit}."
+            repo.commit(message)
             repo.push('origin', branch)
+            return message
           else
             raise "Repository #{repo_name} does not have a branch called #{branch}"
           end

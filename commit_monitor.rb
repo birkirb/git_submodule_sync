@@ -2,65 +2,37 @@ require 'rubygems'
 require 'sinatra'
 require 'json'
 require 'fileutils'
-
-DATA=<<-EOF
-{
-  "before": "5aef35982fb2d34e9d9d4502f6ede1072793222d",
-  "repository": {
-    "url": "http://github.com/defunkt/github",
-    "name": "github",
-    "description": "You're lookin' at it.",
-    "watchers": 5,
-    "forks": 2,
-    "private": 1,
-    "owner": {
-       "commits": [
-    {
-      "id": "41a212ee83ca127e3c8cf465891ab7216a705f59",
-      "url": "http://github.com/defunkt/github/commit/41a212ee83ca127e3c8cf465891ab7216a705f59",
-      "author": {
-        "email": "chris@ozmm.org",
-        "name": "Chris Wanstrath"
-      },
-      "message": "okay i give in",
-      "timestamp": "2008-02-15T14:57:17-08:00",
-      "added": ["filepath.rb"]
-    },
-    {
-      "id": "de8251ff97ee194a289832576287d6f8ad74e3d0",
-      "url": "http://github.com/defunkt/github/commit/de8251ff97ee194a289832576287d6f8ad74e3d0",
-      "author": {
-        "email": "chris@ozmm.org",
-        "name": "Chris Wanstrath"
-      },
-      "message": "update pricing a tad",
-      "timestamp": "2008-02-15T14:36:34-08:00"
-    }
-  ],
-  "after": "de8251ff97ee194a289832576287d6f8ad74e3d0",
-  "ref": "refs/heads/master"
-}
-EOF
-
 require 'lib/git_repo_manager'
 require 'lib/global_logger'
 
-manager = GITRepoManager.new
+repo_manager = nil
 
-manager.submodules.each do |submodule_name|
+configure do
+  repo_manager = GITRepoManager.new
+end
+
+configure :test do
+  local_repos = File.join(`pwd`.chomp, 'spec/files/test_repos')
+  test_config = 'spec/files/config/repos.yml'
+  repo_manager = GITRepoManager.new(test_config, local_repos)
+end
+
+repo_manager.submodules.each do |submodule_name|
   path = "/#{submodule_name}"
 
   get path do
-    halt 403, 'payload only accepted via post'
+    halt 403, 'Payload only accepted via POST'
   end
 
   post path do
     if params[:payload]
       payload = JSON.parse(params[:payload])
-      $logger.info "Received payload from #{payload.repository.url}"
-      manager.update_submodule(payload.repository.url, payload.after)
+      $logger.info "Received payload from #{payload["repository"]["url"]}"
+      payload["ref"].match(/\/([^\/]+)$/)
+      message = repo_manager.update_submodule(payload["repository"]["url"], $1, payload["after"])
+      message.to_s
     else
-      halt 403, 'payload missing'
+      halt 403, 'Payload missing'
     end
   end
 end
