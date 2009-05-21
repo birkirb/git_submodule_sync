@@ -95,6 +95,24 @@ describe GITRepoManager do
 
         @git_repo_using_sub.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end
+
+      it 'should work with http://github.com prefixes' do
+        commit = update_submodule
+
+        manager.update_submodule('http://github.com/tmp/spec_testing/submodule', 'master', commit.sha)
+        local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+
+        local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+      end
+
+      it 'should work with git@github.com: prefixes' do
+        commit = update_submodule
+
+        manager.update_submodule('git@github.com:tmp/spec_testing/submodule', 'master', commit.sha)
+        local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+
+        local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+      end
     end
   end
 
