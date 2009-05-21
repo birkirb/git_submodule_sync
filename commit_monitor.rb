@@ -8,7 +8,9 @@ require 'lib/global_logger'
 repo_manager = nil
 
 configure do
-  repo_manager = GITRepoManager.new
+  repos = File.join(`pwd`.chomp, 'data/repos')
+  config = 'config/repos.yml'
+  repo_manager = GITRepoManager.new(config, repos)
 end
 
 configure :test do
