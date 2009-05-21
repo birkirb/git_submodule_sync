@@ -34,6 +34,7 @@ class GITRepoManager
       repo.submodules.each do |submodule|
         $logger.debug("Repo '#{repo_name}' has submodule '#{submodule.path}', #{submodule.uri}")
 
+        $logger.debug("Comparing: #{normalize_git_uri(submodule.uri)} == #{normalize_git_uri(submodule_uri)}")
         if normalize_git_uri(submodule.uri) == normalize_git_uri(submodule_uri)
           $logger.debug("Found submodule #{submodule_uri} as #{submodule.path} in #{repo_name}")
           # repo has a submodule corresponding to submodule_uri
