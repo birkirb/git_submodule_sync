@@ -4,5 +4,5 @@ Simply put if a submodule S has a branch Sb and the containing project P has a b
 This is Sinatra application and requires:
 
 sinatra
-birkirb-ruby-git
-rspec and cucumber for testing.
+birkirb-git
+rspec, cucumber and webrat for testing.
