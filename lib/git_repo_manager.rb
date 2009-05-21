@@ -150,7 +150,7 @@ class GITRepoManager
       normalized_uri = $1
     end
 
-    if uri_without_git = normalized_uri.match(/(.*)\/\.git\/?$/)
+    if uri_without_git = normalized_uri.match(/(.*?)\/?\.git\/?$/)
       normalized_uri = uri_without_git[1]
     end
 
