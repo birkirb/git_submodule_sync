@@ -21,6 +21,7 @@ class GITRepoManager
   # Submodule's branch has been update to commit.
   # All repositories containing submodule should be update to that commit
   def update_submodule(submodule_uri, branch, commit)
+    updated = []
     clone_or_pull_repositories
 
     $logger.info("Received commit #{commit[0..8]} from #{submodule_uri}, branch #{branch}")
@@ -33,7 +34,7 @@ class GITRepoManager
       repo.submodules.each do |submodule|
         $logger.debug("Repo '#{repo_name}' has submodule '#{submodule.path}', #{submodule.uri}")
 
-        if submodule_uri.index(normalize_git_uri(submodule.uri))
+        if normalize_git_uri(submodule.uri) == normalize_git_uri(submodule_uri)
           $logger.debug("Found submodule #{submodule_uri} as #{submodule.path} in #{repo_name}")
           # repo has a submodule corresponding to submodule_uri
 
@@ -54,13 +55,14 @@ class GITRepoManager
             message = "Auto-updating submodule #{submodule} to commit #{commit}."
             repo.commit(message)
             repo.push('origin', branch)
-            return message
+            updated << message
           else
             raise "Repository #{repo_name} does not have a branch called #{branch}"
           end
         end
       end
     end
+    updated
   end
 
   private
@@ -127,9 +129,19 @@ class GITRepoManager
   def normalize_git_uri(uri)
     normalized_uri  = uri.dup
 
-    if uri.match(/^\//)
-      # Is local append file protocol
-      normalized_uri = 'file://' + normalized_uri
+    if uri.match(/^\/(.*)$/)
+      # Is local, remove leading
+      normalized_uri = $1
+    end
+
+    if uri.match(/^file:\/\/\/(.*)$/)
+      # Is local cut off file protocol
+      normalized_uri = $1
+    end
+
+    if uri.match(/^http:\/\/github.com\/(.*)$/)
+      # Cut off github prefix
+      normalized_uri = $1
     end
 
     if uri_without_git = normalized_uri.match(/(.*)\/\.git\/?$/)

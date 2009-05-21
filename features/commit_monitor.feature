@@ -15,7 +15,7 @@ Feature: commit_monitor
     {
       "before": "5aef35982fb2d34e9d9d4502f6ede1072793222d",
       "repository": {
-        "url": "file:///tmp/spec_testing/submodule",
+        "url": "http://github.com/tmp/spec_testing/submodule",
         "name": "github",
         "description": "You're lookin' at it.",
         "watchers": 5,
