@@ -113,6 +113,15 @@ describe GITRepoManager do
 
         local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end
+
+      it 'should not do anything for different branches' do
+        commit = update_submodule
+
+        manager.update_submodule(TEST_REPO_SUBMODULE, 'stuff', commit.sha)
+        local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+
+        local_repo_clone.log.first.message.should_not == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+      end
     end
   end
 
