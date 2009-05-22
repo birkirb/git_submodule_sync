@@ -36,6 +36,7 @@ begin
   require 'spec/rake/spectask'
   require 'cucumber'
   require 'cucumber/rake/task'
+  require 'spec/rake/verify_rcov'
 
   desc "Run tests with RCov"
   namespace :rcov do
@@ -59,6 +60,11 @@ begin
     task :all do |t|
       Rake::Task["rcov:spec"].invoke
       Rake::Task["rcov:features"].invoke
+    end
+
+    RCov::VerifyTask.new(:verify => 'rcov:all') do |t|
+      t.threshold = 100.0
+      t.index_html = 'coverage/index.html'
     end
   end
 rescue LoadError
