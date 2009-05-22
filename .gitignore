@@ -1,3 +1,5 @@
+coverage.data
+/coverage
 /data
 /log
 /config/repos.yml

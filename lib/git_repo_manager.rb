@@ -72,19 +72,15 @@ class GITRepoManager
     @repos_using_submodules.each do |name|
       uri = @config_hash[name][:uri]
 
-      if name.nil? || uri.nil?
-        raise 'Missing Repository Name or URI'
+      if repo_cloned?(name)
+        repo = Git.open(repo_path(name), :log => $logger)
+        $logger.debug("Pulling from repository at #{uri}")
+        repo.fetch
       else
-        if repo_cloned?(name)
-          repo = Git.open(repo_path(name), :log => $logger)
-          $logger.debug("Pulling from repository at #{uri}")
-          repo.fetch
-        else
-          $logger.info("Cloning repository at #{uri}")
-          repo = Git.clone(uri, name.to_s, :path => @clone_path, :log => $logger)
-        end
-        @repos[name] = repo
+        $logger.info("Cloning repository at #{uri}")
+        repo = Git.clone(uri, name.to_s, :path => @clone_path, :log => $logger)
       end
+      @repos[name] = repo
     end
   end
 
