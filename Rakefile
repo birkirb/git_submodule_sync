@@ -3,7 +3,6 @@ require 'rake'
 begin
   require 'spec/rake/spectask'
 
-  desc "Run RSpec specification tests"
   Spec::Rake::SpecTask.new('spec') do |t|
     t.spec_opts = ["-f specdoc", "-c"]
     t.spec_files = FileList['spec/*_spec.rb']
@@ -34,13 +33,15 @@ rescue LoadError
 end
 
 begin
+  require 'spec/rake/spectask'
   require 'cucumber'
   require 'cucumber/rake/task'
 
-  desc "Run tests with rcov"
+  desc "Run tests with RCov"
   namespace :rcov do
     rm "coverage.data" if File.exist?("coverage.data")
 
+    desc "Run Features with RCov"
     Cucumber::Rake::Task.new(:features) do |t|
       t.rcov = true
       t.rcov_opts = %w{ --exclude osx\/objc,gems\/,spec\/,features\/ --aggregate coverage.data}
@@ -56,8 +57,8 @@ begin
 
     desc "Run both specs and features to generate aggregated coverage"
     task :all do |t|
-      Rake::Task["rcov:features"].invoke
       Rake::Task["rcov:spec"].invoke
+      Rake::Task["rcov:features"].invoke
     end
   end
 rescue LoadError
