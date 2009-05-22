@@ -58,7 +58,7 @@ class GITRepoManager
             repo.push('origin', branch)
             updated << message
           else
-            raise "Repository #{repo_name} does not have a branch called #{branch}"
+            $logger.debug("Repository #{repo_name} does not have a branch called #{branch}")
           end
         end
       end
