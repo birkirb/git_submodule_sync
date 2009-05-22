@@ -38,6 +38,11 @@ begin
   require 'cucumber/rake/task'
   require 'spec/rake/verify_rcov'
 
+  task :test do
+    Rake::Task[:spec].invoke
+    Rake::Task[:features].invoke
+  end
+
   desc "Run tests with RCov"
   namespace :rcov do
     rm "coverage.data" if File.exist?("coverage.data")
@@ -73,3 +78,5 @@ rescue LoadError
     abort 'rcov rake task is not available. Be sure to install rspec, rcov and cucumber as a gem or plugin'
   end
 end
+
+task :default => [:test]
