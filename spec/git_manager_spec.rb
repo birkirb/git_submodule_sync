@@ -46,7 +46,7 @@ describe GITRepoManager do
       }
     end
 
-    context 'when receiving submodule updates' do
+    context 'and is receiving submodule updates' do
 
       after(:all) do
         FileUtils.rm_r(LOCAL_REPOS) if File.exists?(LOCAL_REPOS)
@@ -121,6 +121,24 @@ describe GITRepoManager do
         local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
 
         local_repo_clone.log.first.message.should_not == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+      end
+
+      it 'should create local copies of branches that exist remotely when they match the submodules branches' do
+        @git_repo_sub.branch('testing').checkout
+        `echo "Line for the testing branch." >> #{@sub_path}/README`
+        @git_repo_sub.add('.')
+        @git_repo_sub.commit('Testing line in readme')
+
+        @git_repo_using_sub.branch('testing').checkout
+        `echo "Line for the testing branch in the using submodule repository." >> #{@sub_path}/README`
+        @git_repo_sub.add('.')
+        @git_repo_sub.commit('Testing line in using submodule readme')
+
+        commit = update_submodule
+        manager.update_submodule(TEST_REPO_SUBMODULE, 'testing', commit.sha)
+        local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+        local_repo_clone.checkout('testing')
+        local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end
     end
   end
