@@ -50,7 +50,7 @@ class GITRepoManager
           if repo.is_branch?(branch)
             $logger.debug("Repo has identical branch as submodule #{branch}")
             repo.branch(branch).checkout
-            repo.merge('origin', branch)
+            repo.reset_hard("origin/#{branch}")
 
             # repo has a branch with the same name as the submodule
             sub_repo = submodule.repository
