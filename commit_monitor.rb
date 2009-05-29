@@ -19,6 +19,9 @@ configure :test do
   repo_manager = GITRepoManager.new(test_config, local_repos)
 end
 
+# Repositories are single-threaded
+set :lock
+
 repo_manager.submodules.each do |submodule_name|
   path = "/#{submodule_name}"
 
