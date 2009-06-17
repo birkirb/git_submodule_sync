@@ -2,6 +2,7 @@ require 'rubygems'
 require 'yaml'
 require 'lib/global_logger'
 require 'git'
+require 'fileutils'
 
 class GITRepoManager
   attr_reader :config_file, :clone_path, :submodules, :config_hash
@@ -14,7 +15,7 @@ class GITRepoManager
     process_config_hash
     FileUtils.mkdir_p(clone_path)
     @clone_path = clone_path
-    @cloned_repos = []
+      @cloned_repos = []
     @repos = {}
   end
 
