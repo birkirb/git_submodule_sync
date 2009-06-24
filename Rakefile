@@ -1,6 +1,26 @@
 require 'rake'
 
 begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |s|
+    s.name = %q{submodulesync}
+    s.authors = ["Birkir A. Barkarson"]
+    s.description = %q{GitHub post commit hook to update submodule pointers in containing projects}
+    s.summary = s.description
+    s.email = %q{birkirb@stoicviking.net}
+    s.has_rdoc = true
+    s.homepage = %q{http://github.com/birkirb/git_submodule_sync}
+    s.rubyforge_project = %q{submodulesync}
+    s.rubygems_version = %q{1.3.1}
+    #s.required_rubygems_version = "1.3.1"
+    s.add_dependency(%q<sinatra>, [">= 0.9.1"])
+    s.add_dependency(%q<birkirb-git>, [">= 1.1.1"])
+  end
+rescue LoadError
+  puts "Jeweler, or one of its dependencies, is not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
+end
+
+begin
   require 'spec/rake/spectask'
 
   Spec::Rake::SpecTask.new('spec') do |t|
