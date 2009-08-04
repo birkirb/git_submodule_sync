@@ -75,16 +75,17 @@ class GITRepoManager
   private
 
   def clone_or_pull_repositories
+    debug_logger = $DEBUG ? $logger : nil
     @repos_using_submodules.each do |name|
       uri = @config_hash[name][:uri]
 
       if repo_cloned?(name)
-        repo = Git.open(repo_path(name), :log => $logger)
+        repo = Git.open(repo_path(name), :log => debug_logger)
         $logger.debug("Pulling from repository at #{uri}")
         repo.fetch
       else
         $logger.info("Cloning repository at #{uri}")
-        repo = Git.clone(uri, name.to_s, :path => @clone_path, :log => $logger)
+        repo = Git.clone(uri, name.to_s, :path => @clone_path, :log => debug_logger)
       end
       @repos[name] = repo
     end
