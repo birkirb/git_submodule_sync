@@ -49,7 +49,7 @@ class GITRepoManager
           submodule.update unless submodule.updated?
 
           if repo.is_branch?(branch)
-            $logger.debug("Repo has identical branch as submodule #{branch}")
+            $logger.info("Updating `#{repo_name}` with submodule branch `#{branch}`.")
             repo.branch(branch).checkout
             repo.reset_hard("origin/#{branch}")
 
@@ -63,8 +63,9 @@ class GITRepoManager
             repo.commit(message)
             repo.push('origin', branch)
             updated << message
+            $logger.debug("Commit message: #{message}")
           else
-            $logger.debug("Repository #{repo_name} does not have a branch called #{branch}")
+            $logger.info("Repository #{repo_name} does not have a branch called #{branch}")
           end
         end
       end
@@ -144,7 +145,7 @@ class GITRepoManager
       normalized_uri = $1
     end
 
-    if uri.match(/^http:\/\/github.com\/(.*)$/)
+    if uri.match(/^https?:\/\/github.com\/(.*)$/)
       # Cut off github prefix
       normalized_uri = $1
     end
