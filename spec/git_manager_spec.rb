@@ -66,10 +66,10 @@ describe GITRepoManager do
 
       it 'should pull from projects already cloned so that it has the lastest commits locally' do
 
-        `echo "New line in the readme file" >> #{@usesub_path}/README`
-        @git_repo_using_sub.add('README')
-        @git_repo_using_sub.commit('New line in readme')
-        @git_repo_using_sub.push
+        `echo "New line in the readme file" >> #{@third_party_using_submodule_path}/README`
+        @third_party_using_submodule_clone.add('README')
+        @third_party_using_submodule_clone.commit('New line in readme')
+        @third_party_using_submodule_clone.push
 
         File.exists?(File.join(manager.clone_path, 'using_submodule', '.git')).should be_true
         manager.update_submodule('some_model', 'master', 'x')
@@ -93,9 +93,9 @@ describe GITRepoManager do
 
         manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
 
-        @git_repo_using_sub.fetch
-        @git_repo_using_sub.reset_hard("origin/master")
-        @git_repo_using_sub.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+        @third_party_using_submodule_clone.fetch
+        @third_party_using_submodule_clone.reset_hard("origin/master")
+        @third_party_using_submodule_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end
 
       it 'should work with http://github.com prefixes' do
@@ -126,18 +126,18 @@ describe GITRepoManager do
       end
 
       it 'should create local copies of branches that exist remotely when they match the submodules branches' do
-        @git_repo_sub.branch('testing').checkout
-        `echo "Line for the testing branch." >> #{@sub_path}/README`
-        @git_repo_sub.add('.')
-        @git_repo_sub.commit('Testing line in readme')
-        @git_repo_sub.push('origin', 'testing')
-        commit = @git_repo_sub.log.first
+        @third_party_submodule_clone.branch('testing').checkout
+        `echo "Line for the testing branch." >> #{@third_party_submodule_path}/README`
+        @third_party_submodule_clone.add('.')
+        @third_party_submodule_clone.commit('Testing line in readme')
+        @third_party_submodule_clone.push('origin', 'testing')
+        commit = @third_party_submodule_clone.log.first
 
-        @git_repo_using_sub.branch('testing').checkout
-        `echo "Line for the testing branch in the using_submodule repository." >> #{@usesub_path}/README`
-        @git_repo_using_sub.add('.')
-        @git_repo_using_sub.commit('Testing line in using_submodule readme')
-        @git_repo_using_sub.push('origin', 'testing')
+        @third_party_using_submodule_clone.branch('testing').checkout
+        `echo "Line for the testing branch in the using_submodule repository." >> #{@third_party_using_submodule_path}/README`
+        @third_party_using_submodule_clone.add('.')
+        @third_party_using_submodule_clone.commit('Testing line in using_submodule readme')
+        @third_party_using_submodule_clone.push('origin', 'testing')
 
         manager.update_submodule(TEST_REPO_SUBMODULE, 'testing', commit.sha)
 

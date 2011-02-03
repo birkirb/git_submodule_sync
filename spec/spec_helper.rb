@@ -9,21 +9,21 @@ def initalize_repos
   @test_git_sub_bare = File.join(@test_dir, 'git', 'submodule.git')
   @test_git_usesub_bare = File.join(@test_dir, 'git', 'using_submodule.git')
 
-  @git_sub_bare = copy_bare_repo(@test_git_sub_bare)
-  @git_usesub_bare = copy_bare_repo(@test_git_usesub_bare)
+  @central_bare_repo_submodule = copy_bare_repo(@test_git_sub_bare)
+  @central_bare_repo_using_submodule = copy_bare_repo(@test_git_usesub_bare)
 
   # Instantiante Git repo objects for testing
-  @git_repo_sub = clone_repo(@git_sub_bare, non_bare_name_from_path(@git_sub_bare), TEMP_DIRECTORY)
-  @git_repo_using_sub = clone_repo(@git_usesub_bare, non_bare_name_from_path(@git_usesub_bare), TEMP_DIRECTORY)
+  @third_party_submodule_clone = clone_repo(@central_bare_repo_submodule)
+  @third_party_using_submodule_clone = clone_repo(@central_bare_repo_using_submodule)
 
-  @sub_path = File.join(TEMP_DIRECTORY, non_bare_name_from_path(@git_sub_bare))
-  @usesub_path = File.join(TEMP_DIRECTORY, non_bare_name_from_path(@git_usesub_bare))
+  @third_party_submodule_path = File.join(TEMP_DIRECTORY, non_bare_name_from_path(@central_bare_repo_submodule))
+  @third_party_using_submodule_path = File.join(TEMP_DIRECTORY, non_bare_name_from_path(@central_bare_repo_using_submodule))
 
   # Add the submodule
-  @git_repo_using_sub.add_submodule(@git_sub_bare, :path => 'plugins/some_module')
-  @git_repo_using_sub.add('.')
-  @git_repo_using_sub.commit('Adding submodule')
-  @git_repo_using_sub.push
+  @third_party_using_submodule_clone.add_submodule(@central_bare_repo_submodule, :path => 'plugins/some_module')
+  @third_party_using_submodule_clone.add('.')
+  @third_party_using_submodule_clone.commit('Adding submodule')
+  @third_party_using_submodule_clone.push
   $logger.info("---------- TEST REPOS INITIALIZED ---------")
 end
 
@@ -37,8 +37,8 @@ def non_bare_name_from_path(bare_path)
   bare_path.split('/').last.split('.')[0]
 end
 
-def clone_repo(source, name, destination)
-  Git.clone(source, name, :path => destination, :log => $logger)
+def clone_repo(source)
+  Git.clone(source, non_bare_name_from_path(source), :path => TEMP_DIRECTORY, :log => $logger)
 end
 
 def remove_temp_directory
@@ -46,9 +46,10 @@ def remove_temp_directory
 end
 
 def update_submodule
-  `echo "Updating submodule with additional line in readme." >> #{@sub_path}/README`
-  @git_repo_sub.add('.')
-  @git_repo_sub.commit('New line in readme')
-  @git_repo_sub.push('origin')
-  @git_repo_sub.log.first
+  @third_party_submodule_clone.checkout('master')
+  `echo "Updating submodule with additional line in readme." >> #{@third_party_submodule_path}/README`
+  @third_party_submodule_clone.add('.')
+  @third_party_submodule_clone.commit('New line in readme')
+  @third_party_submodule_clone.push('origin', 'master')
+  @third_party_submodule_clone.log.first
 end
