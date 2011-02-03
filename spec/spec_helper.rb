@@ -45,11 +45,38 @@ def remove_temp_directory
   FileUtils.rm_r(TEMP_DIRECTORY) if File.exists?(TEMP_DIRECTORY)
 end
 
-def update_submodule
-  @third_party_submodule_clone.checkout('master')
-  `echo "Updating submodule with additional line in readme." >> #{@third_party_submodule_path}/README`
+def change_submodule_via_third_party_checkout(branch = 'master', line = 'Updating submodule with additional line in readme.')
+  @third_party_submodule_clone.branch(branch).checkout
+  `echo "#{line}" >> #{@third_party_submodule_path}/README`
   @third_party_submodule_clone.add('.')
   @third_party_submodule_clone.commit('New line in readme')
-  @third_party_submodule_clone.push('origin', 'master')
+  @third_party_submodule_clone.push('origin', branch)
   @third_party_submodule_clone.log.first
+end
+
+def change_using_submodule_via_third_party_checkout(branch = 'master', line = 'Line for the testing branch in the using_submodule repository.')
+  @third_party_using_submodule_clone.branch(branch).checkout
+  `echo "#{line}" >> #{@third_party_using_submodule_path}/README`
+  @third_party_using_submodule_clone.add('.')
+  @third_party_using_submodule_clone.commit('New line in using submodule readme.')
+  @third_party_using_submodule_clone.push('origin', branch)
+  @third_party_using_submodule_clone.log.first
+end
+
+def third_party_using_submodule_checkout
+  @third_party_using_submodule_clone.fetch
+  @third_party_using_submodule_clone.reset_hard("origin/master")
+  @third_party_using_submodule_clone
+end
+
+def local_using_submodule_checkout
+  git = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+  git.fetch
+  git.checkout('master')
+  git.reset_hard('origin/master')
+  git
+end
+
+def local_submodule_checkout
+  Git.open(File.join(LOCAL_REPOS, 'submodule'), :log => $logger)
 end
