@@ -8,8 +8,8 @@ describe GITRepoManager do
   LOCAL_REPOS = File.join(`pwd`.chomp, 'spec/files/test_repos')
   TEST_CONFIG = 'spec/files/config/repos.yml'
 
-  TEST_REPO_USING_SUBMODULE = "file:///tmp/spec_testing/using_submodule"
-  TEST_REPO_SUBMODULE = "file:///tmp/spec_testing/submodule"
+  TEST_REPO_USING_SUBMODULE = "file:///tmp/spec_testing/using_submodule.git"
+  TEST_REPO_SUBMODULE = "file:///tmp/spec_testing/submodule.git"
 
   before(:all) do
     initalize_repos
@@ -60,7 +60,7 @@ describe GITRepoManager do
         File.exists?(File.join(manager.clone_path, 'using_submodule', '.git')).should be_true
         File.exists?(File.join(manager.clone_path, 'submodules')).should be_false
         local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
-
+        local_repo_clone.pull
         local_repo_clone.log.size.should == 2 # First and the submodule commit.
       end
 
@@ -69,6 +69,7 @@ describe GITRepoManager do
         `echo "New line in the readme file" >> #{@usesub_path}/README`
         @git_repo_using_sub.add('README')
         @git_repo_using_sub.commit('New line in readme')
+        @git_repo_using_sub.push
 
         File.exists?(File.join(manager.clone_path, 'using_submodule', '.git')).should be_true
         manager.update_submodule('some_model', 'master', 'x')
@@ -84,7 +85,6 @@ describe GITRepoManager do
 
         manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
         local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
-
         local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end
 
@@ -93,6 +93,8 @@ describe GITRepoManager do
 
         manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
 
+        @git_repo_using_sub.fetch
+        @git_repo_using_sub.reset_hard("origin/master")
         @git_repo_using_sub.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end
 
@@ -128,15 +130,19 @@ describe GITRepoManager do
         `echo "Line for the testing branch." >> #{@sub_path}/README`
         @git_repo_sub.add('.')
         @git_repo_sub.commit('Testing line in readme')
+        @git_repo_sub.push('origin', 'testing')
+        commit = @git_repo_sub.log.first
 
         @git_repo_using_sub.branch('testing').checkout
-        `echo "Line for the testing branch in the using submodule repository." >> #{@sub_path}/README`
-        @git_repo_sub.add('.')
-        @git_repo_sub.commit('Testing line in using submodule readme')
+        `echo "Line for the testing branch in the using_submodule repository." >> #{@usesub_path}/README`
+        @git_repo_using_sub.add('.')
+        @git_repo_using_sub.commit('Testing line in using_submodule readme')
+        @git_repo_using_sub.push('origin', 'testing')
 
-        commit = update_submodule
         manager.update_submodule(TEST_REPO_SUBMODULE, 'testing', commit.sha)
+
         local_repo_clone = Git.open(File.join(LOCAL_REPOS, 'using_submodule'), :log => $logger)
+        local_repo_clone.fetch
         local_repo_clone.checkout('testing')
         local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end

@@ -1,5 +1,5 @@
 submodule:
-  uri: file:///tmp/spec_testing/submodule
+  uri: file:///tmp/spec_testing/submodule.git
   submoduled_in: [:using_submodule]
 using_submodule:
-  uri: file:///tmp/spec_testing/using_submodule
+  uri: file:///tmp/spec_testing/using_submodule.git

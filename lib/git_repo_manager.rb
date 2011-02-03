@@ -55,15 +55,19 @@ class GITRepoManager
 
             # repo has a branch with the same name as the submodule
             sub_repo = submodule.repository
-            sub_repo.remote.fetch
+            sub_repo.fetch
             sub_repo.checkout(commit)
 
             repo.add(submodule_path)
             message = "Auto-updating submodule #{submodule} to commit #{commit}."
             repo.commit(message)
-            repo.push('origin', branch)
+            begin
+              repo.push('origin', branch)
+              $logger.debug("Committed with message: #{message}")
+            rescue => err
+              $logger.debug("Push failed due to: #{err.message}")
+            end
             updated << message
-            $logger.debug("Commit message: #{message}")
           else
             $logger.info("Repository #{repo_name} does not have a branch called #{branch}")
           end
