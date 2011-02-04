@@ -12,20 +12,20 @@ begin
     s.homepage = %q{http://github.com/birkirb/git_submodule_sync}
     s.rubyforge_project = %q{submodulesync}
     s.rubygems_version = %q{1.3.1}
-    #s.required_rubygems_version = "1.3.1"
     s.add_dependency(%q<sinatra>, [">= 0.9.1"])
     s.add_dependency(%q<birkirb-git>, [">= 1.1.1"])
+    s.add_dependency(%q<rspec>, [">= 2"])
   end
 rescue LoadError
   puts "Jeweler, or one of its dependencies, is not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
 end
 
 begin
-  require 'spec/rake/spectask'
+  require 'rspec/core/rake_task'
 
-  Spec::Rake::SpecTask.new('spec') do |t|
-    t.spec_opts = ["-f specdoc", "-c"]
-    t.spec_files = FileList['spec/*_spec.rb']
+  RSpec::Core::RakeTask.new('spec') do |t|
+    t.rspec_opts = ["-fd", "-c"]
+    t.pattern = 'spec/**/*_spec.rb'
   end
 
 rescue LoadError
@@ -38,7 +38,6 @@ end
 begin
   require 'cucumber'
   require 'cucumber/rake/task'
-
 
   desc "Run Cucumber feature tests"
   Cucumber::Rake::Task.new(:features) do |t|
