@@ -6,17 +6,20 @@ require 'fileutils'
 
 class GITRepoManager
   attr_reader :config_file, :clone_path, :submodules, :config_hash
+  attr_accessor :ignore_sync_only_branch_list
 
   def initialize(config = 'config/repos.yml', clone_path = 'data/repos')
     @config_file = config
     $logger.info("Config: #{@config_file}")
     raise 'Missing config file!' unless File.exists?(config)
     @config_hash = GITRepoManager.symbolize_keys(YAML.load_file(config))
-    process_config_hash
     FileUtils.mkdir_p(clone_path)
     @clone_path = clone_path
-      @cloned_repos = []
+    @cloned_repos = []
     @repos = {}
+    @ignore_sync_only_branch_list = false
+    @sync_branch = Hash.new(true)
+    process_config_hash
   end
 
   # Submodule's branch has been update to commit.
@@ -25,51 +28,55 @@ class GITRepoManager
     updated = []
     clone_or_pull_repositories
 
-    $logger.info("Received commit #{commit[0..8]} from #{uri}, branch #{branch}")
+    $logger.info("Received commit #{commit[0..8]} from `#{uri}`, branch `#{branch}`")
 
     @repos_using_submodules.each do |repo_name|
-      $logger.debug("Checking '#{repo_name}' for submodules")
+      $logger.debug("Checking `#{repo_name}` for submodules")
 
       repo = @repos[repo_name]
 
       repo.submodules.each do |submodule|
         submodule_path = submodule.path
         submodule_uri = submodule.uri
-        $logger.debug("Repo '#{repo_name}' has submodule '#{submodule_path}', #{submodule_uri}")
+        $logger.debug("Repo `#{repo_name}` has submodule `#{submodule_path}`, #{submodule_uri}")
 
         normalized_local = GITRepoManager.normalize_git_uri(submodule_uri)
         normalized_receiving = GITRepoManager.normalize_git_uri(uri)
 
         $logger.debug("Comparing: #{normalized_local} == #{normalized_receiving}")
         if normalized_local == normalized_receiving
-          $logger.debug("Found submodule #{uri} as #{submodule_path} in #{repo_name}")
+          $logger.debug("Found submodule `#{uri}` as `#{submodule_path}` in `#{repo_name}`")
           # repo has a submodule corresponding to uri
 
           submodule.init unless submodule.initialized?
           submodule.update unless submodule.updated?
 
           if repo.is_branch?(branch)
-            $logger.info("Updating `#{repo_name}` with submodule branch `#{branch}`.")
-            repo.branch(branch).checkout
-            repo.reset_hard("origin/#{branch}")
+            if @ignore_sync_only_branch_list || @sync_branch[branch.to_sym]
+              $logger.info("Updating `#{repo_name}` with submodule branch `#{branch}`.")
+              repo.branch(branch).checkout
+              repo.reset_hard("origin/#{branch}")
 
-            # repo has a branch with the same name as the submodule
-            sub_repo = submodule.repository
-            sub_repo.fetch
-            sub_repo.checkout(commit)
+              # repo has a branch with the same name as the submodule
+              sub_repo = submodule.repository
+              sub_repo.fetch
+              sub_repo.checkout(commit)
 
-            repo.add(submodule_path)
-            message = "Auto-updating submodule #{submodule} to commit #{commit}."
-            repo.commit(message)
-            begin
-              repo.push('origin', branch)
-              $logger.debug("Committed with message: #{message}")
-            rescue => err
-              $logger.debug("Push failed due to: #{err.message}")
+              repo.add(submodule_path)
+              message = "Auto-updating submodule #{submodule} to commit #{commit}."
+              repo.commit(message)
+              begin
+                repo.push('origin', branch)
+                $logger.debug("Committed with message: #{message}")
+              rescue => err
+                $logger.debug("Push failed due to: #{err.message}")
+              end
+              updated << message
+            else
+              $logger.debug("Branch `#{branch}` is not on the sync list. Ignoring commit.")
             end
-            updated << message
           else
-            $logger.info("Repository #{repo_name} does not have a branch called #{branch}")
+            $logger.info("Repository `#{repo_name}` does not have a branch called `#{branch}`")
           end
         end
       end
@@ -100,12 +107,20 @@ class GITRepoManager
   def process_config_hash
     @submodules = []
     @repos_using_submodules = []
+
     listed_submodules = []
 
     @config_hash.each do |key, value|
       if submoduled_in = value[:submoduled_in]
         listed_submodules.concat(submoduled_in)
         @submodules.push(key)
+
+        if value[:sync_only_branches]
+          @sync_branch = Hash.new(false)
+          value[:sync_only_branches].each do |branch|
+            @sync_branch[branch] = true
+          end
+        end
       else
         @repos_using_submodules.push(key)
       end
@@ -150,7 +165,7 @@ class GITRepoManager
     end
 
     if uri.match(/^https?:\/\/github.com\/(.*)$/)
-      # Cut off github prefix
+      # Cut off old github prefix
       normalized_uri = $1
     end
 

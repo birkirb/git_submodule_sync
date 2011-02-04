@@ -8,6 +8,7 @@ describe GITRepoManager do
   LOCAL_REPOS = File.join(`pwd`.chomp, 'spec/files/test_repos')
   TEST_CONFIG = 'spec/files/config/repos.yml'
 
+  # TODO move
   TEST_REPO_USING_SUBMODULE = "file:///tmp/spec_testing/using_submodule.git"
   TEST_REPO_SUBMODULE = "file:///tmp/spec_testing/submodule.git"
 
@@ -42,7 +43,8 @@ describe GITRepoManager do
       manager.config_hash.should == {
         :using_submodule => {:uri => TEST_REPO_USING_SUBMODULE},
         :submodule       => {:submoduled_in => [:using_submodule],
-                             :uri => TEST_REPO_SUBMODULE}
+                             :uri => TEST_REPO_SUBMODULE,
+                             :sync_only_branches => [:testing, :master]}
       }
     end
 
@@ -120,6 +122,29 @@ describe GITRepoManager do
 
         local_repo_clone = local_using_submodule_checkout
         local_repo_clone.checkout('testing')
+        local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+      end
+
+      it 'should not create local copies of branches that exist remotely when they are not on the sync only list' do
+        commit = change_submodule_via_third_party_checkout('unstable')
+        change_using_submodule_via_third_party_checkout('unstable')
+
+        manager.update_submodule(TEST_REPO_SUBMODULE, 'unstable', commit.sha)
+
+        local_repo_clone = local_using_submodule_checkout
+        local_repo_clone.checkout('unstable')
+        local_repo_clone.log.first.message.should_not == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+      end
+
+      it 'should create local copies of branches that exist remotely when they match the submodule branches and there is no sync list' do
+        commit = change_submodule_via_third_party_checkout('unstable')
+        change_using_submodule_via_third_party_checkout('unstable')
+
+        manager.ignore_sync_only_branch_list = true
+        manager.update_submodule(TEST_REPO_SUBMODULE, 'unstable', commit.sha)
+
+        local_repo_clone = local_using_submodule_checkout
+        local_repo_clone.checkout('unstable')
         local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
       end
     end

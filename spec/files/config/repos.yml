@@ -1,5 +1,6 @@
 submodule:
   uri: file:///tmp/spec_testing/submodule.git
   submoduled_in: [:using_submodule]
+  sync_only_branches: [:testing, :master]
 using_submodule:
   uri: file:///tmp/spec_testing/using_submodule.git
