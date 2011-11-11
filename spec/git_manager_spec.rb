@@ -81,7 +81,7 @@ describe GITRepoManager do
         commit = change_submodule_via_third_party_checkout
 
         manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
-        local_using_submodule_checkout.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+        local_using_submodule_checkout.log.first.message.should == "Auto-updating submodule to commit spec_testing/submodule@#{commit.sha}."
       end
 
       it 'should push auto commits to the remote repository' do
@@ -89,14 +89,14 @@ describe GITRepoManager do
 
         manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
 
-        third_party_using_submodule_checkout.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+        third_party_using_submodule_checkout.log.first.message.should == "Auto-updating submodule to commit spec_testing/submodule@#{commit.sha}."
       end
 
       it 'should work with http://github.com prefixes' do
         commit = change_submodule_via_third_party_checkout
 
         manager.update_submodule('http://github.com/tmp/spec_testing/submodule', 'master', commit.sha)
-        local_using_submodule_checkout.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+        local_using_submodule_checkout.log.first.message.should == "Auto-updating submodule to commit spec_testing/submodule@#{commit.sha}."
       end
 
       it 'should work with git@github.com: prefixes' do
@@ -104,14 +104,14 @@ describe GITRepoManager do
 
         manager.update_submodule('git@github.com:tmp/spec_testing/submodule', 'master', commit.sha)
         local_repo_clone = local_using_submodule_checkout
-        local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+        local_repo_clone.log.first.message.should == "Auto-updating submodule to commit spec_testing/submodule@#{commit.sha}."
       end
 
       it 'should not do anything for different branches' do
         commit = change_submodule_via_third_party_checkout
 
         manager.update_submodule(TEST_REPO_SUBMODULE, 'stuff', commit.sha)
-        local_using_submodule_checkout.log.first.message.should_not == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+        local_using_submodule_checkout.log.first.message.should_not == "Auto-updating submodule to commit spec_testing/submodule@#{commit.sha}."
       end
 
       it 'should create local copies of branches that exist remotely when they match the submodules branches' do
@@ -122,7 +122,7 @@ describe GITRepoManager do
 
         local_repo_clone = local_using_submodule_checkout
         local_repo_clone.checkout('testing')
-        local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+        local_repo_clone.log.first.message.should == "Auto-updating submodule to commit spec_testing/submodule@#{commit.sha}."
       end
 
       it 'should not create local copies of branches that exist remotely when they are not on the sync only list' do
@@ -133,7 +133,7 @@ describe GITRepoManager do
 
         local_repo_clone = local_using_submodule_checkout
         local_repo_clone.checkout('unstable')
-        local_repo_clone.log.first.message.should_not == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+        local_repo_clone.log.first.message.should_not == "Auto-updating submodule to commit spec_testing/submodule@#{commit.sha}."
       end
 
       it 'should create local copies of branches that exist remotely when they match the submodule branches and there is no sync list' do
@@ -145,7 +145,7 @@ describe GITRepoManager do
 
         local_repo_clone = local_using_submodule_checkout
         local_repo_clone.checkout('unstable')
-        local_repo_clone.log.first.message.should == "Auto-updating submodule plugins/some_module to commit #{commit.sha}."
+        local_repo_clone.log.first.message.should == "Auto-updating submodule to commit spec_testing/submodule@#{commit.sha}."
       end
     end
   end

@@ -63,7 +63,7 @@ class GITRepoManager
               sub_repo.checkout(commit)
 
               repo.add(submodule_path)
-              message = "Auto-updating submodule #{submodule} to commit #{commit}."
+              message = "Auto-updating submodule to commit #{self.class.github_user_project_name(submodule_uri)}@#{commit}."
               repo.commit(message)
               begin
                 repo.push('origin', branch)
@@ -179,6 +179,14 @@ class GITRepoManager
     end
 
     normalized_uri
+  end
+
+  def self.github_user_project_name(uri)
+    if name = /(\w+\/\w+)\.git/.match(uri)
+      name[1]
+    else
+      uri
+    end
   end
 
 end
