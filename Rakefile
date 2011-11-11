@@ -13,7 +13,7 @@ begin
     s.rubyforge_project = %q{submodulesync}
     s.rubygems_version = %q{1.3.1}
     s.add_dependency(%q<sinatra>, [">= 0.9.1"])
-    s.add_dependency(%q<birkirb-git>, [">= 1.1.1"])
+    s.add_dependency(%q<birkirb-git>, [">= 1.3.0"])
     s.add_dependency(%q<rspec>, [">= 2"])
   end
 rescue LoadError
@@ -131,4 +131,4 @@ rescue LoadError
   # Too bad
 end
 
-task :default => [:test]
+task :default => [:spec]
