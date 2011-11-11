@@ -4,3 +4,4 @@ coverage.data
 /log
 /config
 /spec/files/test_repos
+/vendor/cache
