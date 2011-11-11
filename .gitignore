@@ -2,5 +2,5 @@ coverage.data
 /coverage
 /data
 /log
-/config/repos.yml
+/config
 /spec/files/test_repos
