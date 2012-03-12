@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'bundle/setup'
+require 'bundler/setup'
 require 'sinatra'
 require 'json'
 require 'fileutils'
@@ -41,4 +41,9 @@ repo_manager.submodules.each do |submodule_name|
       halt 403, 'Payload missing'
     end
   end
+end
+
+# pingable url to make sure the app is running
+get "/status" do
+  "OK"
 end
