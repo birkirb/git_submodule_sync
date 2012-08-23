@@ -5,7 +5,7 @@ require 'git'
 
 describe GITRepoManager do
 
-  LOCAL_REPOS = File.join(`pwd`.chomp, 'spec/files/test_repos')
+  LOCAL_REPOS = File.join(Dir.pwd, 'spec/files/test_repos')
   TEST_CONFIG = 'spec/files/config/repos.yml'
 
   # TODO move
@@ -65,6 +65,7 @@ describe GITRepoManager do
         local_repo_clone = local_using_submodule_checkout
         local_repo_clone.pull
         local_using_submodule_checkout.log.size.should == 2 # First and the submodule commit.
+        local_using_submodule_checkout.log.first.author.git_commit_string.should == "Third party <thirdparty@localhost.local>"
       end
 
       it 'should pull from projects already cloned so that it has the lastest commits locally' do

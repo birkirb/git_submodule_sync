@@ -4,6 +4,15 @@ require 'lib/global_logger'
 require 'git'
 require 'fileutils'
 
+
+# patch author to have a git commitable display
+class Git::Author
+  def git_commit_string
+    "#{@name} <#{@email}>"
+  end
+end
+
+
 class GITRepoManager
   attr_reader :config_file, :clone_path, :submodules, :config_hash
   attr_accessor :ignore_sync_only_branch_list
@@ -62,9 +71,19 @@ class GITRepoManager
               sub_repo.fetch
               sub_repo.checkout(commit)
 
+              # Let's try to get the name of the actual commiter from the submodule in as the commiter
+              # to the pointer update
+              submodule_author = sub_repo.log.first.author
+              if submodule_author
+                $logger.info("Submodule Author : #{submodule_author.name} <#{submodule_author.email}>")
+                opts = {:author => submodule_author.git_commit_string }
+              else
+                opts = {}
+              end
+
               repo.add(submodule_path)
               message = "Auto-updating submodule to commit #{self.class.github_user_project_name(submodule_uri)}@#{commit}."
-              repo.commit(message)
+              repo.commit(message, opts)
               begin
                 repo.push('origin', branch)
                 $logger.debug("Committed with message: #{message}")
