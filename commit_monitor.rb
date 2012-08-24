@@ -3,8 +3,7 @@ require 'bundler/setup'
 require 'sinatra'
 require 'json'
 require 'fileutils'
-require 'lib/git_repo_manager'
-require 'lib/global_logger'
+require 'git_repo_manager'
 
 repo_manager = nil
 
