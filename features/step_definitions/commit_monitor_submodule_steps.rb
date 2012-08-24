@@ -38,7 +38,9 @@ When /^sent a "([^\"]*)" request with a proper payload:$/ do |method, proper_pay
   visit(@path, method, :payload => proper_payload.gsub("COMMITISH", @commitish))
 end
 
-Then /^it should return a (\d+), having updated the "([^\"]*)", with the message:$/ do |status, submodule, message|
+Then /^it should return a (\d+), having updated "(.*?)", with the message:$/ do |status, submodule, message|
+  message_with_commitish = message.gsub("COMMITISH", @commitish)
   response_code.should == status.to_i
-  response_body.should == message.gsub("COMMITISH", @commitish)
+  response_body.should == message_with_commitish
+  third_party_using_submodule_checkout.log.first.message.should == message_with_commitish
 end

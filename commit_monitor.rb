@@ -7,15 +7,15 @@ require 'git_repo_manager'
 
 repo_manager = nil
 
-configure do
-  repos = File.join(`pwd`.chomp, 'data/repos')
-  config = 'config/repos.yml'
+configure(:production) do
+  repos = File.join(Dir.pwd, 'data', 'repos')
+  config = File.join('config', 'repos.yml')
   repo_manager = GITRepoManager.new(config, repos)
 end
 
-configure :test do
-  local_repos = File.join(`pwd`.chomp, 'spec/files/test_repos')
-  test_config = 'spec/files/config/repos.yml'
+configure(:test) do
+  local_repos = File.join(Dir.pwd, 'spec', 'files', 'test_repos')
+  test_config = File.join('spec', 'files', 'config', 'repos.yml')
   repo_manager = GITRepoManager.new(test_config, local_repos)
 end
 
@@ -37,7 +37,7 @@ repo_manager.submodules.each do |submodule_name|
       message = repo_manager.update_submodule(payload["repository"]["url"], $1, payload["after"])
       message.to_s
     else
-      halt 403, 'Payload missing'
+      halt 400, 'Payload missing'
     end
   end
 end

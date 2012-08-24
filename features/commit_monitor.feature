@@ -9,7 +9,7 @@ Feature: commit_monitor
     When sent a "get" request
     Then it should return a 403 saying "Payload only accepted via POST".
     When sent a "post" request without a payload
-    Then it should return 403 saying "Payload missing".
+    Then it should return 400 saying "Payload missing".
     When sent a "post" request with a proper payload:
       """
     {
@@ -53,7 +53,7 @@ Feature: commit_monitor
       "ref": "refs/heads/master"
     }
       """
-    Then it should return a 200, having updated the "plugins/some_module", with the message:
+    Then it should return a 200, having updated "spec_testing/submodule", with the message:
       """
-      Auto-updating submodule plugins/some_module to commit COMMITISH.
+      Auto-updating submodule to commit spec_testing/submodule@COMMITISH.
       """
