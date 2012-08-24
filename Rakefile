@@ -17,7 +17,12 @@ begin
     s.add_dependency(%q<rspec>, [">= 2"])
   end
 rescue LoadError
-  puts "Jeweler, or one of its dependencies, is not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
+  puts "Jeweler, or one of its dependencies, is not available."
+end
+
+desc 'Start the commit monitor'
+task 'start' do |t, args|
+  ruby "-Ilib commit_monitor.rb"
 end
 
 begin
@@ -25,6 +30,7 @@ begin
 
   RSpec::Core::RakeTask.new('spec') do |t|
     t.rspec_opts = ["-fd", "-c"]
+    t.ruby_opts = ["-Ispec,lib"]
     t.pattern = 'spec/**/*_spec.rb'
   end
 

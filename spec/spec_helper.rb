@@ -1,3 +1,6 @@
+require 'git_repo_manager'
+require 'global_logger'
+
 TEMP_DIRECTORY = '/tmp/spec_testing'
 
 def initalize_repos

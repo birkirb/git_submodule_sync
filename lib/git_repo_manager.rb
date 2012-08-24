@@ -1,8 +1,7 @@
-require 'rubygems'
 require 'yaml'
-require 'lib/global_logger'
 require 'git'
 require 'fileutils'
+require 'global_logger'
 
 class GITRepoManager
   attr_reader :config_file, :clone_path, :submodules, :config_hash

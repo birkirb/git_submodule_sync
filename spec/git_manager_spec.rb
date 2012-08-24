@@ -1,6 +1,4 @@
-require 'lib/git_repo_manager'
-require 'lib/global_logger'
-require 'spec/spec_helper.rb'
+require 'spec_helper.rb'
 require 'git'
 
 describe GITRepoManager do
