@@ -40,9 +40,9 @@ describe GITRepoManager do
     it 'should give access to config data' do
       manager.config_hash.should == {
         :using_submodule => {:uri => TEST_REPO_USING_SUBMODULE},
-        :submodule       => {:submoduled_in => [:using_submodule],
+        :submodule       => {:submoduled_in => ['using_submodule'],
                              :uri => TEST_REPO_SUBMODULE,
-                             :sync_only_branches => [:testing, :master]}
+                             :sync_only_branches => ['testing', 'master']}
       }
     end
 

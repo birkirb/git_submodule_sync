@@ -109,7 +109,7 @@ class GITRepoManager
         $logger.info("Cloning repository at #{uri}")
         repo = Git.clone(uri, name.to_s, :path => @clone_path, :log => debug_logger)
       end
-      @repos[name] = repo
+      @repos[name.to_sym] = repo
     end
   end
 
@@ -117,17 +117,14 @@ class GITRepoManager
     @submodules = []
     @repos_using_submodules = []
 
-    listed_submodules = []
-
     @config_hash.each do |key, value|
       if submoduled_in = value[:submoduled_in]
-        listed_submodules.concat(submoduled_in)
-        @submodules.push(key)
+        @submodules.push(key.to_sym)
 
         if value[:sync_only_branches]
           @sync_branch = Hash.new(false)
           value[:sync_only_branches].each do |branch|
-            @sync_branch[branch] = true
+            @sync_branch[branch.to_sym] = true
           end
         end
       else
