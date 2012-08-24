@@ -4,15 +4,6 @@ require 'lib/global_logger'
 require 'git'
 require 'fileutils'
 
-
-# patch author to have a git commitable display
-class Git::Author
-  def git_commit_string
-    "#{@name} <#{@email}>"
-  end
-end
-
-
 class GITRepoManager
   attr_reader :config_file, :clone_path, :submodules, :config_hash
   attr_accessor :ignore_sync_only_branch_list
@@ -39,29 +30,30 @@ class GITRepoManager
 
     $logger.info("Received commit #{commit[0..8]} from `#{uri}`, branch `#{branch}`")
 
-    @repos_using_submodules.each do |repo_name|
-      $logger.debug("Checking `#{repo_name}` for submodules")
+    if sync_branch?(branch)
+      @repos_using_submodules.each do |repo_name|
+        $logger.debug("Checking `#{repo_name}` for submodules")
 
-      repo = @repos[repo_name]
+        repo = @repos[repo_name]
 
-      repo.submodules.each do |submodule|
-        submodule_path = submodule.path
-        submodule_uri = submodule.uri
-        $logger.debug("Repo `#{repo_name}` has submodule `#{submodule_path}`, #{submodule_uri}")
+        repo.submodules.each do |submodule|
+          submodule_path = submodule.path
+          submodule_uri = submodule.uri
+          $logger.debug("Repo `#{repo_name}` has submodule `#{submodule_path}`, #{submodule_uri}")
 
-        normalized_local = GITRepoManager.normalize_git_uri(submodule_uri)
-        normalized_receiving = GITRepoManager.normalize_git_uri(uri)
+          normalized_local = self.class.normalize_git_uri(submodule_uri)
+          normalized_receiving = self.class.normalize_git_uri(uri)
+          $logger.debug("Comparing: #{normalized_local} == #{normalized_receiving}")
 
-        $logger.debug("Comparing: #{normalized_local} == #{normalized_receiving}")
-        if normalized_local == normalized_receiving
-          $logger.debug("Found submodule `#{uri}` as `#{submodule_path}` in `#{repo_name}`")
-          # repo has a submodule corresponding to uri
+          if normalized_local == normalized_receiving
+            $logger.debug("Found submodule `#{uri}` as `#{submodule_path}` in `#{repo_name}`")
 
-          submodule.init unless submodule.initialized?
-          submodule.update unless submodule.updated?
+            # repo has a submodule corresponding to uri
 
-          if repo.is_branch?(branch)
-            if @ignore_sync_only_branch_list || @sync_branch[branch.to_sym]
+            submodule.init unless submodule.initialized?
+            submodule.update unless submodule.updated?
+
+            if repo.is_branch?(branch)
               $logger.info("Updating `#{repo_name}` with submodule branch `#{branch}`.")
               repo.branch(branch).checkout
               repo.reset_hard("origin/#{branch}")
@@ -73,10 +65,9 @@ class GITRepoManager
 
               # Let's try to get the name of the actual commiter from the submodule in as the commiter
               # to the pointer update
-              submodule_author = sub_repo.log.first.author
-              if submodule_author
-                $logger.info("Submodule Author : #{submodule_author.name} <#{submodule_author.email}>")
-                opts = {:author => submodule_author.git_commit_string }
+              if author = self.class.git_commit_author_name(sub_repo.log.first)
+                $logger.debug("Submodule author: #{author}")
+                opts = {:author => author}
               else
                 opts = {}
               end
@@ -92,14 +83,15 @@ class GITRepoManager
               end
               updated << message
             else
-              $logger.debug("Branch `#{branch}` is not on the sync list. Ignoring commit.")
+              $logger.info("Repository `#{repo_name}` does not have a branch called `#{branch}`")
             end
-          else
-            $logger.info("Repository `#{repo_name}` does not have a branch called `#{branch}`")
           end
         end
       end
+    else
+      $logger.debug("Branch `#{branch}` is not on the sync list. Ignoring commit.")
     end
+
     updated
   end
 
@@ -121,7 +113,6 @@ class GITRepoManager
       @repos[name] = repo
     end
   end
-
 
   def process_config_hash
     @submodules = []
@@ -155,6 +146,10 @@ class GITRepoManager
 
   def repo_path(name)
     File.join(@clone_path, name.to_s)
+  end
+
+  def sync_branch?(name)
+    @ignore_sync_only_branch_list || @sync_branch[name.to_sym]
   end
 
   def self.symbolize_keys(hash)
@@ -206,6 +201,11 @@ class GITRepoManager
     else
       uri
     end
+  end
+
+  def self.git_commit_author_name(commit)
+    author = commit.author
+    "#{author.name} <#{author.email}>"
   end
 
 end

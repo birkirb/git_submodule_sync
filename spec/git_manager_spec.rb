@@ -65,7 +65,6 @@ describe GITRepoManager do
         local_repo_clone = local_using_submodule_checkout
         local_repo_clone.pull
         local_using_submodule_checkout.log.size.should == 2 # First and the submodule commit.
-        local_using_submodule_checkout.log.first.author.git_commit_string.should == "Third party <thirdparty@localhost.local>"
       end
 
       it 'should pull from projects already cloned so that it has the lastest commits locally' do
@@ -81,8 +80,10 @@ describe GITRepoManager do
       it 'should auto commit an update to repositories using submodules' do
         commit = change_submodule_via_third_party_checkout
 
+        local_using_submodule_checkout.log.first.message.should_not == "Auto-updating submodule to commit spec_testing/submodule@#{commit.sha}."
         manager.update_submodule(TEST_REPO_SUBMODULE, 'master', commit.sha)
         local_using_submodule_checkout.log.first.message.should == "Auto-updating submodule to commit spec_testing/submodule@#{commit.sha}."
+        GITRepoManager.git_commit_author_name(local_using_submodule_checkout.log.first).should == "Third party <thirdparty@localhost.local>"
       end
 
       it 'should push auto commits to the remote repository' do

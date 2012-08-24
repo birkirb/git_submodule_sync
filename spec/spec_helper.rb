@@ -49,7 +49,7 @@ def change_submodule_via_third_party_checkout(branch = 'master', line = 'Updatin
   @third_party_submodule_clone.branch(branch).checkout
   `echo "#{line}" >> #{@third_party_submodule_path}/README`
   @third_party_submodule_clone.add('.')
-  @third_party_submodule_clone.commit('New line in readme')
+  @third_party_submodule_clone.commit('New line in readme', :author => 'Third party <thirdparty@localhost.local>')
   @third_party_submodule_clone.push('origin', branch)
   @third_party_submodule_clone.log.first
 end
@@ -58,7 +58,7 @@ def change_using_submodule_via_third_party_checkout(branch = 'master', line = 'L
   @third_party_using_submodule_clone.branch(branch).checkout
   `echo "#{line}" >> #{@third_party_using_submodule_path}/README`
   @third_party_using_submodule_clone.add('.')
-  @third_party_using_submodule_clone.commit('New line in using submodule readme.', :author => 'Third party <thirdparty@localhost.local>')
+  @third_party_using_submodule_clone.commit('New line in using submodule readme.')
   @third_party_using_submodule_clone.push('origin', branch)
   @third_party_using_submodule_clone.log.first
 end
