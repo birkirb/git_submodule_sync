@@ -1,6 +1,7 @@
+::LOCAL_REPOS = File.join(Dir.pwd, 'spec', 'files', 'test_repos')
+
 Before do
   require 'spec_helper'
-  ::LOCAL_REPOS = File.join(Dir.pwd, 'spec', 'files', 'test_repos')
   initalize_repos
   @commitish = change_submodule_via_third_party_checkout.sha
 end

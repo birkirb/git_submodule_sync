@@ -57,3 +57,8 @@ Feature: commit_monitor
       """
       Auto-updating submodule to commit spec_testing/submodule@COMMITISH.
       """
+
+    Scenario: ping
+      Given a running monitor that we'd like to ping for monitoring
+      When a "get" request is made to path "/status"
+      Then it should return a 200 saying "OK".
